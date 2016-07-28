@@ -1,0 +1,8 @@
+$input_nml
+	dt = 1.0
+	tot_t = 30000.0
+	alfa = 1.0
+	fric_coef=0.01
+	two_layer = .true.
+  z = -80.0
+/

@@ -3,18 +3,18 @@ program main
   implicit none
   
   integer :: n=0, i
-  real, dimension(-10:10) :: x, y
+  real, dimension(-100:100) :: x, y
+	character (len=32) :: carg
 
-  forall(i=-10:10) x(i)=real(i)/10.0
+  forall(i=-100:100) x(i)=real(i)/100.0
 
-  print *, x
+	call getarg(1,carg)
 
-  print *, 'enter a positive integer :'
-  read(*,*) n
+  read(carg,*) n
 
-  do i=-10,10
-    y(i) = legendre(n,x(i))
+  open(10,file='output.dat')
+  do i=-100,100
+    write(10,*) x(i), legendre(n,x(i))
   enddo
-
-  print *, y
+	close(10)
 end program main

@@ -18,11 +18,11 @@ PROGRAM  heat_eqn
 
   implicit none
 
-  integer :: ni, nj, halo = 1,n, unit, ntsteps
+  integer :: ni=100, nj=100, halo = 1,n, unit, ntsteps
   real, dimension(:),allocatable :: xt0,yt0
   real, dimension(:),allocatable :: xt1,yt1
   real, allocatable,dimension(:,:,:) :: u
-  integer :: dtts
+  integer :: dtts = 1
   real :: delx=2.0, dely=2.0, cfl
   integer :: ioun,npes,pe, isc,iec,jsc,jec,isd,ied,jsd,jed
   integer, dimension(2) :: domain_layout=(/1,1/)
@@ -36,8 +36,10 @@ PROGRAM  heat_eqn
 
   logical :: used
 
-  namelist /heat_eqn_nml/ ni, nj, dtts, ntsteps, delx, dely
-!
+  integer :: bnd_option = 1
+
+  namelist /heat_eqn_nml/ ni, nj, dtts, ntsteps, delx, dely, bnd_option
+
   call mpp_init()
   call mpp_io_init()
   call set_calendar_type(NO_CALENDAR)
@@ -139,10 +141,6 @@ PROGRAM  heat_eqn
   call mpp_update_domains(u,local_domain)
 
 ! Prescribing boundary conditions at the boundary of full domain.
-  if (jsc == 1) u(:,jsc-1,0) = 0.0
-  if (jec == nj) u(:,jec+1,0) = 0.0
-  if (isc == 1) u(isc-1,:,0) = 0.0
-  if (iec == ni) u(iec+1,:,0) = 0.0
 
 ! Time Step loop
   do n = 1,ntsteps 
@@ -171,5 +169,37 @@ PROGRAM  heat_eqn
 
   !
   call mpp_exit()
+  contains
+    subroutine generate_boundary_conditions ()
+      select case (bnd_option)
+         case(1)
+            if (jsc == 1) u(:,jsc-1,0) = 0.0
+            if (jec == nj) u(:,jec+1,0) = 0.0
+            if (isc == 1) u(isc-1,:,0) = 0.0
+            if (iec == ni) u(iec+1,:,0) = 0.0
+         case(2)
+            if (jsc == 1) u(:,jsc-1,0) = 1.0
+            if (jec == nj) u(:,jec+1,0) = 0.0
+            if (isc == 1) u(isc-1,:,0) = 0.0
+            if (iec == ni) u(iec+1,:,0) = 0.0
+         case(3)
+            if (jsc == 1) u(:,jsc-1,0) = 1.0
+            if (jec == nj) u(:,jec+1,0) = 0.0
+            if (isc == 1) u(isc-1,:,0) = 1.0
+            if (iec == ni) u(iec+1,:,0) = 0.0
+         case(4)
+            if (jsc == 1) u(:,jsc-1,0) = 1.0
+            if (jec == nj) u(:,jec+1,0) = 1.0
+            if (isc == 1) u(isc-1,:,0) = 1.0
+            if (iec == ni) u(iec+1,:,0) = 0.0
+         case(5)
+            if (jsc == 1) u(:,jsc-1,0) = 1.0
+            if (jec == nj) u(:,jec+1,0) =1.0
+            if (isc == 1) u(isc-1,:,0) = 0.0
+            if (iec == ni) u(iec+1,:,0) = 0.0
+         case default
+            call mpp_error(FATAL,'Invalid option for boundary value.')
+       end select
 
+    end subroutine generate_boundary_conditions
 END PROGRAM heat_eqn

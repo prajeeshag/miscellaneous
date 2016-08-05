@@ -90,7 +90,15 @@ The gradient is
 The divergence is
 
 \begin{align}
-  \div{\vb{F}} = \qty( \frac{2}{r} + \frac{\partial}{\partial r} ) F_r + \qty( \frac{\partial}{r\partial\phi} + \frac{\cot\phi}{r} ) F_\phi + \frac{\partial F_\theta}{r\sin\phi\partial\theta}
+  \div{\vb{F}} = \qty( \frac{2}{r} + \pdv{}{r} ) F_r + \qty( \pdv{}{\phi} + \frac{\cot\phi}{r} ) F_\phi + \frac{1}{r\sin\phi} \pdv{ F_\theta}{\theta}
+\end{align}
+
+The laplacian is
+
+
+\begin{align}
+  \laplacian &= \div{\grad{f}} \\
+             &= \pdv[2]{}{r}+\frac{2}{r}\pdv[]{}{r} + \frac{1}{r^2\sin^2\phi}\pdv[2]{}{\theta} + \frac{\cos\phi}{r^2\sin\phi}\pdv[]{}{\phi} + \frac{1}{r^2}\pdv[2]{}{\phi}
 \end{align}
 
 \bibliographystyle{plain}

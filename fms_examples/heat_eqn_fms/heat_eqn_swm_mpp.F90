@@ -18,7 +18,8 @@ PROGRAM  heat_eqn
 
   implicit none
 
-  integer :: ni=100, nj=100, halo = 1,n, unit, ntsteps
+  integer :: ni=100, nj=100, halo = 1,n, unit, ntsteps=10000
+  real :: epsl = 1e-3, depsl
   real, dimension(:),allocatable :: xt0,yt0
   real, dimension(:),allocatable :: xt1,yt1
   real, allocatable,dimension(:,:,:) :: u
@@ -38,8 +39,9 @@ PROGRAM  heat_eqn
 
   integer :: bnd_option = 1
 
-  namelist /heat_eqn_nml/ ni, nj, dtts, ntsteps, delx, dely, bnd_option
+  namelist /heat_eqn_nml/ ni, nj, dtts, ntsteps, delx, dely, bnd_option, epsl
 
+  depsl = huge(depsl)
   call mpp_init()
   call mpp_io_init()
   call set_calendar_type(NO_CALENDAR)
@@ -152,15 +154,19 @@ PROGRAM  heat_eqn
     do j = jsc,jec
       do i = isc,iec
         u(i,j,taup1) = u(i,j,tau)*(1-2*dtts*(delx**2 + dely**2)/(delx**2*dely**2)) + & 
-                    dtts*((u(i-1,j,tau) + u(i+1,j,tau))/delx**2 + (u(i,j-1,tau) + u(i,j+1,tau))/dely**2)
+             dtts*((u(i-1,j,tau) + u(i+1,j,tau))/delx**2 + (u(i,j-1,tau) + u(i,j+1,tau))/dely**2)
+        depsl = max(u(i,j,taup1)-u(i,j,taup),depsl)
       enddo
-    enddo
+   enddo
+   call mpp_max(depsl)
+   
     ! Halo update after each time step computation.
     call mpp_update_domains(u,local_domain)
     
     ! data for the netcdf variable temp is being send at every time-step
     used = send_data(id_temp, u(isc:iec,jsc:jec,taup1), Time)
-    call print_time(Time) 
+    call print_time(Time)
+    if(depsl<=epsl) exit
   enddo
 
   ! It is very important to end the diag_manager, other wise the data at the

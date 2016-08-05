@@ -1,6 +1,7 @@
+
 \documentclass[11pt]{article}
 
-\usepackage{graphicx,amsmath,amssymb,subfigure,url,xspace,float,physics}
+\usepackage{graphicx,amsmath,amssymb,url,xspace,float,physics}
 \newcommand{\eg}{e.g.,\xspace}
 \newcommand{\bigeg}{E.g.,\xspace}
 \newcommand{\etal}{\textit{et~al.\xspace}}
@@ -22,14 +23,15 @@
 
 \end{figure}
 
-Sperical Coordinates, also called Spherical polar Coordinates are a system of curvilinear Coordinates. Define $\theta$ to be the azimuthal angle in the x-y plane from the x-axis with $0 \leq \theta 2\pi$ (longitude $\lambda$ for us), $\phi$ to the polar angle (also known as zenith angle adn colatitude, with $\phi=90\deg - \delta$ where $\delta$ is the latitude in degrees) from the point to the origin. \par
+Sperical Coordinates, also called Spherical polar Coordinates are a system of curvilinear Coordinates. Define $\theta$ to be the azimuthal angle in the x-y plane from the x-axis with $0 \leq \theta \leq 2\pi$ (longitude $\lambda$ for us), $\phi$ to the polar angle (also known as zenith angle and colatitude, with $\phi=90\deg - \delta$ where $\delta$ is the latitude in degrees) from the point to the origin with $0 \leq \phi \leq \pi$. \par
 
 \section{In terms of Cartesian coordinates}
 \label{sec:cart}
 The Spherical Coordinates $(r,\theta,\phi)$ are related to the cartesian Coordinates (x,y,z) by:
 
 \begin{align}
-  r &= \sqrt{x^2+y^2+z^2} \\                                                             \theta &= tan^{-1} \left(\frac{y}{x}\right) \\
+  r &= \sqrt{x^2+y^2+z^2} \\
+  \theta &= tan^{-1} \left(\frac{y}{x}\right) \\
   \phi &= cos^{-1} \left(\frac{z}{r}\right)
 \end{align}
 where $r\in(0,\infty), \theta\in(0,2\pi), \phi\in(0,\pi)$ and the inverse tangent must be suitably defined to take the correct quadrant of (x,y) into account.
@@ -46,21 +48,49 @@ In terms of Cartesian Coordinates,
 A line element is,
 
 \begin{align}
-  \vec{ds} &= \hat{r}dr + \hat{\phi} rd\phi + \hat{\theta} r\sin{\phi}d\theta
+  \vb{ds} &= \hat{r}dr + \hat{\phi} rd\phi + \hat{\theta} r\sin{\phi}d\theta
 \end{align}
 
 The radius vector is,
 
 \begin{align}
-  \vec{r} &= r\cos{\theta}\sin{\phi}\hat{i} + r\sin{\theta}\sin{\phi}\hat{j} + r\cos{\phi}\hat{k}
+  \vb{r} &= r\cos{\theta}\sin{\phi}\hat{i} + r\sin{\theta}\sin{\phi}\hat{j} + r\cos{\phi}\hat{k}
 \end{align}
 
 The unit vectors are,
 
 \begin{align}
-  \hat{r} &= \frac{\frac{d\vec{r}}{dr}}{\abs{\frac{d\vec{r}}{dr}}} \\
-  \hat{\phi} &= \frac{\frac{d\vec{r}}{d\phi}}{\abs{\frac{d\vec{r}}{d\phi}}} \\
-  \hat{\theta} &= \frac{\frac{d\vec{r}}{d\theta}}{\abs{\frac{d\vec{r}}{d\theta}}}
+  \hat{r} &= \frac{\frac{d\vb{r}}{dr}}{\abs{\frac{d\vb{r}}{dr}}} \\
+          &= \hat{i}\cos\theta\sin\phi + \hat{j}\sin\theta\sin\phi + \hat{k}\cos\phi \\
+  \hat{\phi} &= \frac{\frac{d\vb{r}}{d\phi}}{\abs{\frac{d\vb{r}}{d\phi}}} \\
+          &= -\hat{i}\sin\theta + \hat{j}\cos\theta \\
+  \hat{\theta} &= \frac{\frac{d\vb{r}}{d\theta}}{\abs{\frac{d\vb{r}}{d\theta}}} \\
+          &= \hat{i}\cos\theta\cos\phi + \hat{j}\sin\theta\cos\phi - \hat{k}\sin\phi
+\end{align}
+
+The Derivatives of unit vectors are
+\begin{align}
+  \pdv{\hat{r}}{r} &= 0\\
+  \pdv{\hat\theta}{r} &= 0\\
+  \pdv{\hat\phi}{r} & = 0 \\
+  \pdv{\hat{r}}{\theta} &= \sin\phi \hat\theta \\
+  \pdv{\hat\theta}{\theta} &= -\cos\phi\hat\phi - \sin\phi\hat r \\
+  \pdv{\hat\phi}{\theta} &= \cos\phi\hat\theta \\
+  \pdv{\hat{r}}{\phi}  &= \hat\phi \\
+  \pdv{\hat\theta}{\phi} &= 0 \\
+  \pdv{\hat\phi}{\phi} &= -\hat r                                          
+\end{align}
+
+The gradient is
+
+\begin{align}
+  \grad &= \hat r \frac{\partial}{\partial r} + \hat\phi \frac{\partial}{r\partial\phi} + \hat\theta \frac{\partial}{r\sin\phi\partial\theta}
+\end{align}
+
+The divergence is
+
+\begin{align}
+  \div{\vb{F}} = \qty( \frac{2}{r} + \frac{\partial}{\partial r} ) F_r + \qty( \frac{\partial}{r\partial\phi} + \frac{\cot\phi}{r} ) F_\phi + \frac{\partial F_\theta}{r\sin\phi\partial\theta}
 \end{align}
 
 \bibliographystyle{plain}

@@ -12,6 +12,19 @@ program form_matrix
   integer ::  ij, ninj, i, j, dim_ap, istrt, nele, ldb, nrhs=1, info
   character :: uplo='L'
   character (len=512) :: fmt, cnj
+  logical :: bndopt(4)=(/.true.,.true.,.true.,.true./), exist
+
+  namelist/laplace_nml/bndopt, ni, nj
+
+  inquire(file='input.nml',exist=exist)
+
+  if(exist) then
+     open(10, file='input.nml')
+     read(10, nml=laplace_nml)
+     close(10)
+  endif
+
+  write(*,nml=laplace_nml)
   
   ninj=ni*nj
   dim_ap = (ninj*(ninj+1)/2)
@@ -30,11 +43,11 @@ program form_matrix
   forall(i=1:nj) yaxis(i)=i
   
   bndx(:,:) = 0.0; bndy(:,:) = 0.0
-  forall(i=1:nj) bndx(1,i) = sin(3.1414 * (i-1)/(nj-1))
-  forall(i=1:nj) bndx(2,i) = sin(3.1414 * (i-1)/(nj-1))
   
-!  forall(i=1:ni) bndy(1,i) = sin(3.1414 * (i-1)/(ni-1))
-!  forall(i=1:ni) bndy(2,i) = sin(3.1414 * (i-1)/(ni-1))
+  if(bndopt(1)) forall(i=1:nj) bndx(1,i) = sin(3.1414 * (i-1)/(nj-1))
+  if(bndopt(3)) forall(i=1:nj) bndx(2,i) = sin(3.1414 * (i-1)/(nj-1))
+  if(bndopt(2)) forall(i=1:ni) bndy(1,i) = sin(3.1414 * (i-1)/(ni-1))
+  if(bndopt(4)) forall(i=1:ni) bndy(2,i) = sin(3.1414 * (i-1)/(ni-1))
   
   l_AP(:) = 0.0
   l_B(:,:) = 0.0

@@ -27,7 +27,7 @@ program form_matrix
   allocate(xaxis(ni))
 
   forall(i=1:ni) xaxis(i)=i
-  forall(i=1:nj) yaxis(i)=j
+  forall(i=1:nj) yaxis(i)=i
   
   bndx(:,:) = 0.0; bndy(:,:) = 0.0
   forall(i=1:nj) bndx(1,i) = sin(3.1414 * (i-1)/(nj-1))

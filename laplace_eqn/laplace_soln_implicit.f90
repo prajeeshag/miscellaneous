@@ -60,7 +60,7 @@ program form_matrix
         ij = (i-1)*nj+j
         l_AP(istrt) = a
         if (j<nj) l_AP(istrt+1) = b
-        if (istrt+nj<=dim_ap) l_AP(istrt+nj) = 1.
+        if (i<ni .and. istrt+nj<=dim_ap) l_AP(istrt+nj) = 1.
         istrt=istrt+nele
         nele=nele-1
         if (i==1) l_B(ij,1) = l_B(ij,1) - bndx(1,j)

@@ -1,0 +1,5 @@
+&LAPLACE_NML
+ BNDOPT= T, T, T, T,
+  NI=         10,
+   NJ=         10,
+/

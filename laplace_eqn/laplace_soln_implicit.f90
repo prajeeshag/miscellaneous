@@ -1,4 +1,6 @@
 program form_matrix
+  use netcdf_write, only: write_nc
+  
   implicit none
   integer :: ni=10, nj=10
   real :: delx=1.0, dely=1.0
@@ -6,6 +8,7 @@ program form_matrix
   real, allocatable :: amat(:,:)
   real, allocatable :: bndx(:,:), bndy(:,:), l_AP(:), l_B(:,:)
   integer, allocatable :: ipiv(:)
+  integer, allocatable :: xaxis(:), yaxis(:)
   integer ::  ij, ninj, i, j, dim_ap, istrt, nele, ldb, nrhs=1, info
   character :: uplo='L'
   character (len=512) :: fmt, cnj
@@ -20,7 +23,12 @@ program form_matrix
   allocate(l_AP(dim_ap))
   allocate(l_B(ninj,nrhs))
   allocate(amat(ni,nj))
+  allocate(yaxis(nj))
+  allocate(xaxis(ni))
 
+  forall(i=1:ni) xaxis(i)=i
+  forall(i=1:nj) yaxis(i)=j
+  
   bndx(:,:) = 0.0; bndy(:,:) = 0.0
   forall(i=1:nj) bndx(1,i) = sin(3.14 * (i-1)/(nj-1))
   forall(i=1:nj) bndx(2,i) = sin(3.14 * (i-1)/(nj-1))
@@ -61,6 +69,8 @@ program form_matrix
   endif
 
   amat(:,:) = reshape(l_B(:,1),(/ni,nj/))
+
+  call write_nc(real(xaxis), real(yaxis), amat, 'temp')
 
   open(10, file='output.dat')
   

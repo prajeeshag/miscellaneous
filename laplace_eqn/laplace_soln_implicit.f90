@@ -68,9 +68,11 @@ program form_matrix
 !  fmt = '('//trim(adjustl(cnj))//'(1x,f4.2))'
   
   do i = 1, ni
-     write(10,*) amat(i,:)
-!     write(*,fmt) l_B((i-1)*nj+1:(i*nj),1)
+     do j = 1, nj
+        write(10,*) i, j, 1, amat(i,j)
+     enddo
   enddo
+  
 !  write(*,fmt)bndx(1,:)
   close(10)
 end program form_matrix

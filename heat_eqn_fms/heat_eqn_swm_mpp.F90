@@ -20,6 +20,7 @@ PROGRAM  heat_eqn
   implicit none
 
   integer :: ni=100, nj=100, halo = 1, n, unit, ntsteps=10000
+  integer :: bnd_option = 1, init_option = 1 
   real :: epsl = 1e-5, depsl
   real, dimension(:),allocatable :: xt0,yt0
   real, dimension(:),allocatable :: xt1,yt1
@@ -38,9 +39,7 @@ PROGRAM  heat_eqn
 
   logical :: used
 
-  integer :: bnd_option = 1, init_option = 2 
-
-  namelist /heat_eqn_nml/ ni, nj, dtts, ntsteps, delx, dely, bnd_option, epsl
+  namelist /heat_eqn_nml/ ni, nj, dtts, ntsteps, delx, dely, bnd_option, epsl, init_option
 
   depsl = huge(depsl)
   call mpp_init()
@@ -56,7 +55,9 @@ PROGRAM  heat_eqn
 
 ! Read some namelist inputs
   call mpp_open(ioun,'input.nml',action=MPP_RDONLY,form=MPP_ASCII)
+  rewind(ioun)
   read(ioun,heat_eqn_nml,iostat=io_status)
+  if(io_status/=0) call mpp_error(FATAL, 'Error while reading heat_eqn_nml')
   write(stdout(),heat_eqn_nml)
   call mpp_close(ioun)
 
@@ -125,8 +126,9 @@ PROGRAM  heat_eqn
 
 ! Seting Up Output using diag_manager
   ! register the netcdf axis X and Y
-  id_x = diag_axis_init(name='X', data=xt0(isc:iec), units='m' , cart_name='X', long_name='X-axis', domain2=local_domain)
-  id_y = diag_axis_init(name='Y', data=yt0(jsc:jec), units='m' , cart_name='Y', long_name='Y-axis', domain2=local_domain)
+  id_x = diag_axis_init(name='X', data=xt0, units='m' , cart_name='X', long_name='X-axis', domain2=local_domain)
+  id_y = diag_axis_init(name='Y', data=yt0, units='m' , cart_name='Y', long_name='Y-axis', domain2=local_domain)
+
 
   ! register a variable (here name is temp)
   id_temp = register_diag_field ( module_name='heat_eqn', field_name='temp', axes=(/id_x,id_y/), init_time=Time, &
@@ -163,7 +165,7 @@ PROGRAM  heat_eqn
     
     ! data for the netcdf variable temp is being send at every time-step
     used = send_data(id_temp, u(isc:iec,jsc:jec,taup1), Time)
-    call print_time(Time)
+!    call print_time(Time)
     if(depsl<=epsl) exit
   enddo
 
@@ -177,30 +179,30 @@ PROGRAM  heat_eqn
     subroutine generate_boundary_conditions ()
       select case (bnd_option)
          case(1)
-            if (jsc == 1) u(:,jsc-1,0) = 0.0
-            if (jec == nj) u(:,jec+1,0) = 0.0
-            if (isc == 1) u(isc-1,:,0) = 0.0
-            if (iec == ni) u(iec+1,:,0) = 0.0
+            if (jsc == 1) u(:,jsc-1,:) = 0.0
+            if (jec == nj) u(:,jec+1,:) = 0.0
+            if (isc == 1) u(isc-1,:,:) = 0.0
+            if (iec == ni) u(iec+1,:,:) = 0.0
          case(2)
-            if (jsc == 1) u(:,jsc-1,0) = 1.0
-            if (jec == nj) u(:,jec+1,0) = 0.0
-            if (isc == 1) u(isc-1,:,0) = 0.0
-            if (iec == ni) u(iec+1,:,0) = 0.0
+            if (jsc == 1) forall(i=isc:iec) u(i,jsc-1,:) = sin(3.1414*xt1(i))
+            if (jec == nj) u(:,jec+1,:) = 0.0
+            if (isc == 1) u(isc-1,:,:) = 0.0
+            if (iec == ni) u(iec+1,:,:) = 0.0
          case(3)
-            if (jsc == 1) u(:,jsc-1,0) = 1.0
-            if (jec == nj) u(:,jec+1,0) = 0.0
-            if (isc == 1) u(isc-1,:,0) = 1.0
-            if (iec == ni) u(iec+1,:,0) = 0.0
+            if (jsc == 1) forall(i=isc:iec) u(i,jsc-1,:) = sin(3.1414*xt1(i))
+            if (jec == nj) u(:,jec+1,:) = 0.0
+            if (isc == 1) forall(j=jsc:jec) u(isc-1,j,:) = sin(3.1414*yt1(j))
+            if (iec == ni) u(iec+1,:,:) = 0.0
          case(4)
-            if (jsc == 1) u(:,jsc-1,0) = 1.0
-            if (jec == nj) u(:,jec+1,0) = 1.0
-            if (isc == 1) u(isc-1,:,0) = 1.0
-            if (iec == ni) u(iec+1,:,0) = 0.0
+            if (jsc == 1) forall(i=isc:iec) u(i,jsc-1,:) = sin(3.1414*xt1(i))
+            if (jec == nj) forall(i=isc:iec) u(i,jec+1,:) = sin(3.1414*xt1(i))
+            if (isc == 1) forall(j=jsc:jec) u(isc-1,j,:) = sin(3.1414*yt1(j))
+            if (iec == ni) u(iec+1,:,:) = 0.0
          case(5)
-            if (jsc == 1) u(:,jsc-1,0) = 1.0
-            if (jec == nj) u(:,jec+1,0) =1.0
-            if (isc == 1) u(isc-1,:,0) = 0.0
-            if (iec == ni) u(iec+1,:,0) = 0.0
+            if (jsc == 1) forall(i=isc:iec) u(i,jsc-1,:) = sin(3.1414*xt1(i))
+            if (jec == nj) forall(i=isc:iec) u(i,jec+1,:) = sin(3.1414*xt1(i))
+            if (isc == 1) forall(j=jsc:jec) u(isc-1,j,:) = sin(3.1414*yt1(j))
+            if (iec == ni) forall(j=jsc:jec) u(iec+1,j,:) = sin(3.1414*yt1(j))
          case default
             call mpp_error(FATAL,'Invalid option for boundary value.')
        end select
@@ -209,14 +211,16 @@ PROGRAM  heat_eqn
     
     subroutine get_initial_conditions()
       select case (init_option) 
-         case (1)
-            u(isc:iec,jsc:jec,0) = 0.0
-         case default
-            do j = jsc,jec
-               do i = isc, iec
-                  u(i,j,0) = sin(3.1414*xt1(i))*sin(3.1414*yt1(j))
-               enddo
+      case (1)
+         call mpp_error(note, 'init option :1')
+         u(isc:iec,jsc:jec,0) = 0.0
+      case default
+         call mpp_error(note, 'init option :default')
+         do j = jsc,jec
+            do i = isc, iec
+               u(i,j,0) = sin(3.1414*xt1(i))*sin(3.1414*yt1(j))
             enddo
+         enddo
       end select
     end subroutine get_initial_conditions
 

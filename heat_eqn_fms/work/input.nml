@@ -1,9 +1,10 @@
 	&heat_eqn_nml 
 	    ni = 100, 
 	    nj = 100, 
-	    ntsteps =20, 
+!	    ntsteps =20, 	
 	    dtts = 1
 	    io_int = 1
+	    epsl = 1e-10
 	/
 	 &diag_manager_nml
 	       max_axes = 100,

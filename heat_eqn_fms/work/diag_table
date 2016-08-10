@@ -1,15 +1,15 @@
 "HEATEQN"
 0000 00 00 00 00 00
 #output files
-"heat_eqn", 1,  "seconds", 1, "seconds", "time"
+"heat_eqn", -1,  "seconds", 1, "seconds", "time"
 #
 #=======================================================================
 # Grid quantities:
-"heat_eqn","X","X","heat_eqn","all",.false.,"none",2 
-"heat_eqn","Y","Y","heat_eqn","all",.false.,"none",2 
+"heat_eqn","x","x","heat_eqn","all",.false.,"none",2 
+"heat_eqn","y","y","heat_eqn","all",.false.,"none",2 
 #==========================================================================
 # 2d ocean fields:
-"heat_eqn","temp","temp", "heat_eqn","all",.true.,"none",2
+"heat_eqn","temp","temp", "heat_eqn","all",.false.,"none",2
 
 #===============================================================================
 #

@@ -4,6 +4,7 @@
 
 PROGRAM  heat_eqn
   use mpp_mod, only: mpp_npes, mpp_pe, mpp_error, stdout, FATAL, WARNING, NOTE, mpp_init, mpp_exit
+  use mpp_mod, only: mpp_max
 
   use mpp_io_mod, only: mpp_io_init, mpp_open, mpp_close, MPP_RDONLY, MPP_ASCII, MPP_MULTI
                      
@@ -18,8 +19,8 @@ PROGRAM  heat_eqn
 
   implicit none
 
-  integer :: ni=100, nj=100, halo = 1,n, unit, ntsteps=10000
-  real :: epsl = 1e-3, depsl
+  integer :: ni=100, nj=100, halo = 1, n, unit, ntsteps=10000
+  real :: epsl = 1e-5, depsl
   real, dimension(:),allocatable :: xt0,yt0
   real, dimension(:),allocatable :: xt1,yt1
   real, allocatable,dimension(:,:,:) :: u
@@ -37,7 +38,7 @@ PROGRAM  heat_eqn
 
   logical :: used
 
-  integer :: bnd_option = 1
+  integer :: bnd_option = 1, init_option = 2 
 
   namelist /heat_eqn_nml/ ni, nj, dtts, ntsteps, delx, dely, bnd_option, epsl
 
@@ -132,17 +133,14 @@ PROGRAM  heat_eqn
               long_name='Temperature', units='Degree Celsius', interp_method = "conserve_order1" )
 
 ! Initial conditions
-  !NOTE : computation happens for the compute domain.
-  do j = jsc,jec
-    do i = isc, iec
-      u(i,j,0) = sin(3.1414*xt1(i))*sin(3.1414*yt1(j))
-    enddo
-  enddo
+  call get_initial_conditions()
 
 ! halo update using mpp_update_domains
   call mpp_update_domains(u,local_domain)
 
 ! Prescribing boundary conditions at the boundary of full domain.
+
+  call generate_boundary_conditions()
 
 ! Time Step loop
   do n = 1,ntsteps 
@@ -155,7 +153,7 @@ PROGRAM  heat_eqn
       do i = isc,iec
         u(i,j,taup1) = u(i,j,tau)*(1-2*dtts*(delx**2 + dely**2)/(delx**2*dely**2)) + & 
              dtts*((u(i-1,j,tau) + u(i+1,j,tau))/delx**2 + (u(i,j-1,tau) + u(i,j+1,tau))/dely**2)
-        depsl = max(u(i,j,taup1)-u(i,j,taup),depsl)
+        depsl = max(u(i,j,taup1)-u(i,j,tau),depsl)
       enddo
    enddo
    call mpp_max(depsl)
@@ -208,4 +206,18 @@ PROGRAM  heat_eqn
        end select
 
     end subroutine generate_boundary_conditions
+    
+    subroutine get_initial_conditions()
+      select case (init_option) 
+         case (1)
+            u(isc:iec,jsc:jec,0) = 0.0
+         case default
+            do j = jsc,jec
+               do i = isc, iec
+                  u(i,j,0) = sin(3.1414*xt1(i))*sin(3.1414*yt1(j))
+               enddo
+            enddo
+      end select
+    end subroutine get_initial_conditions
+
 END PROGRAM heat_eqn

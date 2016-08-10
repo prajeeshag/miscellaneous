@@ -54,6 +54,7 @@ program form_matrix
   allocate(ipiv(ninj))
   
   call dspsv(uplo, ninj, nrhs, l_AP, ipiv, l_B, ninj, info)
+
   if (info/=0) then
      print *, 'error while running dppsv, error code:', info
      stop
@@ -63,8 +64,8 @@ program form_matrix
 
   open(10, file='output.dat')
   
-  write(cnj,*)nj
-  fmt = '('//trim(adjustl(cnj))//'(1x,f4.2))'
+!  write(cnj,*)nj
+!  fmt = '('//trim(adjustl(cnj))//'(1x,f4.2))'
   
   do i = 1, ni
      write(10,*) amat(i,:)

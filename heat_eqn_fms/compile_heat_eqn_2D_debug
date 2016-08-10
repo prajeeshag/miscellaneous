@@ -4,7 +4,7 @@ set -x
 thisdir=$(pwd)
 srcdir=$(dirname $thisdir)
 
-FMS_UTILS=$srcdir/shared
+FMS_UTILS=$srcdir/fms_shared
 FMS_UTILITIES="$FMS_UTILS/include $FMS_UTILS/platform $FMS_UTILS/constants $FMS_UTILS/fms $FMS_UTILS/time_manager $FMS_UTILS/mpp $FMS_UTILS/diag_manager  $FMS_UTILS/memutils"
 
 MKMF=$thisdir/mkmf

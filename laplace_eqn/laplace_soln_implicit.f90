@@ -30,11 +30,11 @@ program form_matrix
   forall(i=1:nj) yaxis(i)=j
   
   bndx(:,:) = 0.0; bndy(:,:) = 0.0
-  forall(i=1:nj) bndx(1,i) = sin(3.14 * (i-1)/(nj-1))
-  forall(i=1:nj) bndx(2,i) = sin(3.14 * (i-1)/(nj-1))
+  forall(i=1:nj) bndx(1,i) = sin(3.1414 * (i-1)/(nj-1))
+  forall(i=1:nj) bndx(2,i) = sin(3.1414 * (i-1)/(nj-1))
   
-!  forall(i=1:ni) bndy(1,i) = sin(3.14 * (i-1)/(ni-1))
-!  forall(i=1:ni) bndy(2,i) = sin(3.14 * (i-1)/(ni-1))
+!  forall(i=1:ni) bndy(1,i) = sin(3.1414 * (i-1)/(ni-1))
+!  forall(i=1:ni) bndy(2,i) = sin(3.1414 * (i-1)/(ni-1))
   
   l_AP(:) = 0.0
   l_B(:,:) = 0.0
@@ -72,17 +72,4 @@ program form_matrix
 
   call write_nc(real(xaxis), real(yaxis), amat, 'temp')
 
-  open(10, file='output.dat')
-  
-!  write(cnj,*)nj
-!  fmt = '('//trim(adjustl(cnj))//'(1x,f4.2))'
-  
-  do i = 1, ni
-     do j = 1, nj
-        write(10,*) i, j, 1, amat(i,j)
-     enddo
-  enddo
-  
-!  write(*,fmt)bndx(1,:)
-  close(10)
 end program form_matrix

@@ -1,6 +1,6 @@
 program form_matrix
   implicit none
-  integer :: ni=3, nj=3
+  integer :: ni=10, nj=10
   real :: delx=1.0, dely=1.0
   real :: b, a
   real, allocatable :: amat(:,:), bmat(:)
@@ -16,14 +16,10 @@ program form_matrix
   a = 2*(1-b)
 
   allocate(amatc(ni*nj,ni*nj))
-  allocate(amat(ni*nj,ni*nj),bmat(ni*nj))
-  allocate(bndi(2,nj),bndj(2,ni))
-  allocate(l_AP(dim_ap))
   allocate(cl_ap(dim_ap))
   
   forall(i=1:ninj,j=1:ninj) amatc(i,j)='0'
   forall(i=1:dim_ap) cl_ap(i)='0'
-  forall(i=1:ninj,j=1:ninj) amat(i,j)=0.0
 
   nele = ninj
   istrt = 1
@@ -35,15 +31,15 @@ program form_matrix
         ij=(i-1)*nj+j
         ijp1=(i-1)*nj+j+1
         ip1j=i*nj+j
-!        amatc(ij,im1j) = '0'
-!        amatc(ij,ijm1) = '0'
+        amatc(ij,im1j) = '0'
+        amatc(ij,ijm1) = '0'
         amatc(ij,ijp1) = '0'
         amatc(ij,ip1j) = '0'
-!        if ((i-1)>0) amatc(ij,im1j)='1'
-!       if ((j-1)>0) amatc(ij,ijm1)='b'
+        if (i>1) amatc(ij,im1j)='1'
+        if (j>1) amatc(ij,ijm1)='b'
         amatc(ij,ij)='a'
-        if ((j+1)<=nj) amatc(ij,ijp1)='b'
-        if ((i+1)<=ni) amatc(ij,ip1j)='1'
+        if (j<nj) amatc(ij,ijp1)='b'
+        if (i<ni) amatc(ij,ip1j)='2'
         cl_ap(istrt) = 'a'
         if (j<nj) cl_ap(istrt+1) = 'b'
         if (istrt+nj<=dim_ap) cl_ap(istrt+nj) = '1'

@@ -1,0 +1,8 @@
+ &HEAT_EQN_NML
+  BNDOPT  = 4*T,
+  NI      =          10,
+  NJ      =          10,
+  DELT    =   0.05     ,
+  NTSTEP  =   1000,
+  OUTSTEP =   10
+/

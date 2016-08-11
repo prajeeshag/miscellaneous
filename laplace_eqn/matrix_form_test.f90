@@ -1,6 +1,6 @@
 program form_matrix
   implicit none
-  integer :: ni=10, nj=10
+  integer :: ni=4, nj=4
   real :: delx=1.0, dely=1.0
   real :: b, a
   real, allocatable :: amat(:,:), bmat(:)
@@ -49,12 +49,12 @@ program form_matrix
   end do
   
   write(cnjni,*)ninj
-  write(fmt,*)'(i2.2,1x,i2.2,'//trim(cnjni)//'(1x,a1))'
+  write(fmt,*)'('//trim(cnjni)//'(1x,a1))'
   write(*,*) trim(fmt)
   do i = 1, ni
      do j = 1, nj
         ij = (i-1)*nj+j
-        write (*,trim(fmt)) i,j,amatc(ij,:)
+        write (*,trim(fmt)) amatc(ij,:)
      enddo
   enddo
   write(*,*)

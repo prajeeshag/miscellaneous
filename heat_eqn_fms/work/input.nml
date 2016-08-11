@@ -1,11 +1,11 @@
 	&heat_eqn_nml 
-	    ni = 20, 
-	    nj = 20, 
-	    ntsteps =30000, 	
+	    ni = 10, 
+	    nj = 10, 
+	    ntsteps =50000, 	
 	    dtts = 1,
 	    epsl = 1e-5,
 	    init_option = 1,
-	    bnd_option = 5
+	    bnd_option = 3
 	/
 	 &diag_manager_nml
 	       max_axes = 100,

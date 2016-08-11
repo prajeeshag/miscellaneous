@@ -9,12 +9,12 @@ program form_matrix
   real, allocatable :: bndx(:,:), bndy(:,:), l_AP(:), l_B(:,:), tmp_AP(:)
   integer, allocatable :: ipiv(:)
   integer, allocatable :: xaxis(:), yaxis(:)
-  integer ::  ij, ninj, i, j, dim_ap, istrt, nele, ldb, nrhs=1, info, n
+  integer ::  ij, ninj, i, j, dim_ap, istrt, nele, ldb, nrhs=1, info, n, k=1
   character :: uplo='L'
   character (len=512) :: fmt, cnj
   logical :: bndopt(4)=(/.true.,.true.,.true.,.true./), exist
 
-  namelist/heat_eqn_nml/bndopt, ni, nj, delt, ntstep, outstep
+  namelist/heat_eqn_nml/bndopt, ni, nj, delt, ntstep, outstep, k
 
   outstep = ntstep
 
@@ -56,10 +56,10 @@ program form_matrix
 
   bndx(:,:) = 0.0; bndy(:,:) = 0.0
 
-  if(bndopt(1)) forall(i=1:nj) bndx(1,i) = sin(3.1414 * (i-1)/(nj-1))
-  if(bndopt(3)) forall(i=1:nj) bndx(2,i) = sin(3.1414 * (i-1)/(nj-1))
-  if(bndopt(2)) forall(i=1:ni) bndy(1,i) = sin(3.1414 * (i-1)/(ni-1))
-  if(bndopt(4)) forall(i=1:ni) bndy(2,i) = sin(3.1414 * (i-1)/(ni-1))
+  if(bndopt(1)) forall(i=1:nj) bndx(1,i) = sin(k * 3.1414 * (i-1)/(nj-1))
+  if(bndopt(3)) forall(i=1:nj) bndx(2,i) = sin(k * 3.1414 * (i-1)/(nj-1))
+  if(bndopt(2)) forall(i=1:ni) bndy(1,i) = sin(k * 3.1414 * (i-1)/(ni-1))
+  if(bndopt(4)) forall(i=1:ni) bndy(2,i) = sin(k * 3.1414 * (i-1)/(ni-1))
 
   l_AP(:) = 0.0
 

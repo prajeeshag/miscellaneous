@@ -1,13 +1,13 @@
 
 FC = gfortran
-FC = ifort
+#FC = ifort
 
-NETCDF = /gpfs1/home/Libs/INTEL/NETCDF4/netcdf-4.1.3
-#NETCDF = /usr/local
+#NETCDF = /gpfs1/home/Libs/INTEL/NETCDF4/netcdf-4.1.3
+NETCDF = /usr/local
 
-#OPTS = -O3 --default-real-8
+OPTS = -O3 --default-real-8
 
-OPTS = -O3 -r8
+#OPTS = -O3 -r8
 
 laplace.exe: laplace_soln_implicit.o netcdf_write.o
 	$(FC) $(OPTS) -o laplace.exe netcdf_write.o  laplace_soln_implicit.o -llapack -lblas -L$(NETCDF)/lib -lnetcdf -lnetcdff

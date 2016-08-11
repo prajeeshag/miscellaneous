@@ -1,12 +1,12 @@
 
 
-#FC = gfortran
-#NETCDF = /usr/local
-#OPTS = -O3 --default-real-8 -g
+FC = gfortran
+NETCDF = /usr/local
+OPTS = -O3 --default-real-8 -g
 
-FC = ifort
-NETCDF = /gpfs1/home/Libs/INTEL/NETCDF4/netcdf-4.1.3
-OPTS = -O3 -r8 -g -traceback
+#FC = ifort
+#NETCDF = /gpfs1/home/Libs/INTEL/NETCDF4/netcdf-4.1.3
+#OPTS = -O3 -r8 -g -traceback
 
 heat_eqn_implicit.exe: heat_eqn_implicit.o netcdf_write.o
 	$(FC) $(OPTS) -o heat_eqn_implicit.exe netcdf_write.o heat_eqn_implicit.o -llapack -lblas -L$(NETCDF)/lib -lnetcdf -lnetcdff

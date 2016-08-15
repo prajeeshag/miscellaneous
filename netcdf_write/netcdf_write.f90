@@ -23,17 +23,21 @@ module netcdf_write
   
 contains
 
-  subroutine write_nc_2d(xaxis, yaxis, field, name, ntime)
+  subroutine write_nc_2d(xaxis, yaxis, field, name, ntime, missing_value)
      real, intent(in) :: xaxis(:), yaxis(:), field(:,:)
      character (len=*), intent(in) :: name
      integer, optional :: ntime
+     real, optional :: missing_value
       
      !local vars
      integer :: xvarid, yvarid, stat, varid
      integer :: ntime1, i
+     real (kind=4) :: missing_value1
       
      ntime1 = 1
+     missing_value1 = -1.e27
      if (present(ntime)) ntime1=ntime
+     if (present(missing_value)) missing_value1 = missing_value
       
      if (fid<0) then
         stat = nf90_create('output.nc', nf90_clobber, fid)
@@ -80,6 +84,10 @@ contains
            stat = nf90_def_var(fid, trim(name), nf90_float, (/xid,yid,rdimid/), var(nvars)%id)
            varid = var(nvars)%id
            call handle_err(stat)
+           stat = nf90_put_att(fid, varid, 'missing_value', missing_value1)
+           call handle_err(stat)
+           stat = nf90_put_att(fid, varid, '_FillValue', missing_value1)
+           call handle_err(stat)
            stat = nf90_enddef(fid)
            call handle_err(stat)
         else
@@ -99,15 +107,20 @@ contains
     
    end subroutine write_nc_2d
    
-  subroutine write_nc_2d_1(xaxis, yaxis, field, name, ntime)
+  subroutine write_nc_2d_1(xaxis, yaxis, field, name, ntime, missing_value)
      real, intent(in) :: xaxis(:), yaxis(:), field(:)
      character (len=*), intent(in) :: name
-     integer, optional :: ntime
+     integer,intent(in), optional :: ntime
+     real, intent(in), optional :: missing_value 
       
      !local vars
      integer :: xvarid, yvarid, stat, varid
      integer :: ntime1, i
      real :: tmp(size(xaxis),size(yaxis))
+     real :: missing_value1
+
+     missing_value1 = -1.e27
+     if ( present(missing_value) ) missing_value1 = missing_value
       
      ntime1 = 1
      if (present(ntime)) ntime1=ntime

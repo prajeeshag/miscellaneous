@@ -48,13 +48,16 @@ program main
   forall(i=1:nip1) xaxis(i) = i
   forall(i=1:njp1) yaxis(i) = i
 
-  topo(:,:) = 10.0
+  topo(:,:) = 20.0
   topo(1,:) = -5.0
   topo(ni,:) = -5.0
-  forall(i=-5:5) topo(100+i-1,:) = 2*abs(i) - 0.1
+  do i = 50, 100
+     topo(i,:) = 20.0 - ((real(i)-50.0)/50.0) * 20.3
+  enddo
+  
+  topo(101:150,:) = -0.2
   topo(:,1) = -5.0
   topo(:,nj) = -5.0
-
 
   uvel(:,:,:) = 0.0; vvel = 0.0
 
@@ -66,7 +69,7 @@ program main
 
   do i = 1, 11
      do j = 1, 11
-        eta(:,65+i,int(nj/2)-6+j) = sin(3.1414*(i-1)/11)*sin(3.1414*(j-1)/11)
+        eta(:,i,:) = 2.5*sin(3.1414*(i-1)/11)
      enddo
   enddo
   
@@ -133,9 +136,11 @@ program main
      where(h(1:ni,1:nj) < hmin) wet(1:ni,1:nj)=.false.
 
      call shapiro_filter_2d(eta(taup1,1:ni,1:nj),wet(1:ni,1:nj))
+
+     h(1:ni,1:nj) = h0(:,:) + eta(taup1,1:ni,1:nj)
      
      tmp = -999.0
-     where(wet(1:ni,1:nj)) tmp(:,:) = eta(taup1,1:ni,1:nj)
+     where(wet(1:ni,1:nj)) tmp(:,:) = eta(taup1, 1:ni,1:nj)
      
      call write_nc(xaxis(1:ni), yaxis(1:nj), tmp, 'eta', t, missing_value=-999.0)
      call write_nc(xaxis(1:ni), yaxis(1:nj), h0, 'h0', t)

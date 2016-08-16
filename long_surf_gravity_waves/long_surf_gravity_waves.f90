@@ -3,17 +3,17 @@ program main
   
   implicit none
   real, parameter :: GRAV = 9.8
-  real :: delt = 1.0, delx = 10.0, dely = 10.0
+  real :: delt = 0.1, delx = 10.0, dely = 10.0
   integer :: ntstep=2000
   integer :: ni = 100, nj = 100, nip1, njp1
   real, allocatable :: uvel(:,:,:), vvel(:,:,:), eta(:,:,:), h(:,:), h0(:,:), topo(:,:)
   real, allocatable :: xaxis(:), yaxis(:), tmp(:,:)
   logical, allocatable :: maskt(:,:)
   integer :: i, j, t, taup1, tau 
-  real :: rdelx, rdely, cfl, temp_b1, temp_b2, temp_a1, temp_a2
+  real :: rdelx, rdely, cfl, temp_b1, temp_b2, temp_a1, temp_a2, epsl=0.005
   logical :: exist
   
-  namelist/main_nml/ delt, delx, dely, ni, nj
+  namelist/main_nml/ delt, delx, dely, ni, nj, ntstep, epsl
 
   inquire(file='input.nml',exist=exist)
   
@@ -102,6 +102,8 @@ program main
                                                      - (vvel(taup1,i,j) - abs(vvel(taup1,i,j))) * h(i,j) )
         enddo
      enddo
+
+     call shapiro_filter_2d(eta(taup1,:,:))
      
      h(1:ni,1:nj) = h0(:,:) + eta(taup1,:,:)
      tmp = -999.0
@@ -119,5 +121,22 @@ program main
   deallocate(h0)
   deallocate(topo)
   deallocate(maskt)
+
+contains
+
+  subroutine shapiro_filter_2d(field)
+    real, intent(inout) :: field(:,:)
+    integer :: is, ie, js, je, i, j
+    
+    is = 2; ie = size(field,1) - 1
+    js = 2; je = size(field,2) - 1
+
+    do i = is, ie
+       do j = js, je, 1
+          field(i,j) = (1-epsl)*field(i,j) + 0.25 * epsl * &
+               (field(i-1,j)+field(i+1,j)+field(i,j-1)+field(i,j+1))
+       end do
+    end do
+  end subroutine shapiro_filter_2d
 
 end program main

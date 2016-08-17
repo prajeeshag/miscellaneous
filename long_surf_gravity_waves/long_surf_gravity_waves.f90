@@ -49,15 +49,15 @@ program main
   forall(i=1:njp1) yaxis(i) = i
 
   topo(:,:) = 100.0
-  topo(1,:) = -5.0
-  topo(ni,:) = -5.0
+!  topo(1,:) = -2.0
+  topo(ni,:) = -2.0
   do i = 50, 250
      topo(i,:) = 50.0 - ((real(i)-50.0)/200.0) * 50.3
   enddo
   
   topo(251:300,:) = -0.3
-  topo(:,1) = -5.0
-  topo(:,nj) = -5.0
+  topo(:,1) = -2.0
+  topo(:,nj) = -2.0
 
   uvel(:,:,:) = 0.0; vvel = 0.0
 

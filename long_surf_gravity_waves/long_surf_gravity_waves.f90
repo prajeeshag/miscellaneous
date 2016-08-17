@@ -5,11 +5,11 @@ program main
   real, parameter :: GRAV = 9.8
   real :: delt = 0.1, delx = 10.0, dely = 10.0
   integer :: ntstep=2000
-  integer :: ni = 150, nj = 100, nip1, njp1
+  integer :: ni = 300, nj = 100, nip1, njp1
   real, allocatable :: uvel(:,:,:), vvel(:,:,:), eta(:,:,:), h(:,:), h0(:,:), topo(:,:)
   real, allocatable :: xaxis(:), yaxis(:), tmp(:,:)
   logical, allocatable :: wet(:,:)
-  integer :: i, j, t, taup1, tau 
+  integer :: i, j, t, taup1, tau, ki=81
   real :: rdelx, rdely, cfl, temp_b1, temp_b2, temp_a1, temp_a2, epsl=0.0
   real :: hmin = 0.05, tmpvel
   logical :: exist
@@ -48,14 +48,14 @@ program main
   forall(i=1:nip1) xaxis(i) = i
   forall(i=1:njp1) yaxis(i) = i
 
-  topo(:,:) = 20.0
+  topo(:,:) = 100.0
   topo(1,:) = -5.0
   topo(ni,:) = -5.0
-  do i = 50, 100
-     topo(i,:) = 20.0 - ((real(i)-50.0)/50.0) * 20.3
+  do i = 50, 250
+     topo(i,:) = 50.0 - ((real(i)-50.0)/200.0) * 50.3
   enddo
   
-  topo(101:150,:) = -0.2
+  topo(251:300,:) = -0.3
   topo(:,1) = -5.0
   topo(:,nj) = -5.0
 
@@ -67,10 +67,8 @@ program main
   
   where (h0<0.0) eta(0,1:ni,1:nj) = -1.0*h0(:,:)
 
-  do i = 1, 11
-     do j = 1, 11
-        eta(:,i,:) = 2.5*sin(3.1414*(i-1)/11)
-     enddo
+  do i = 1, ki
+     eta(:,i,:) = 2.0*sin(3.1414*(i-1)/ki)
   enddo
   
   cfl = delt * sqrt(GRAV * maxval(h0)) / delx

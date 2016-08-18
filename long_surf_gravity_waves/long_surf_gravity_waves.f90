@@ -1,4 +1,14 @@
 program main
+  
+  use mpp_mod, only: mpp_npes, mpp_pe, mpp_error, stdout, FATAL, WARNING, NOTE, mpp_init, mpp_exit, mpp_max
+  use mpp_io_init, only: mpp_io_init, mpp_open, mpp_close, MPP_RDONLY, MPP_ASCII, MPP_MULTI
+  use mpp_domains_mod, only: domain2d, domain1d, mpp_define_layout, mpp_define_domains, &
+       mpp_get_compute_domain, mpp_get_domain_components, mpp_update_domains
+  use diag_manager_mod, only: diag_manager_init, register_diag_field, register_static_field, &
+       diag_axis_init, send_data, diag_manager_end
+  use time_manager_mod, only: set_calendar_type, NO_CALENDAR, time_type, set_time, operator(+), assignment(=), &
+       print_time
+  
   use netcdf_write, only : write_nc
   
   implicit none
@@ -13,55 +23,27 @@ program main
   real :: rdelx, rdely, cfl, temp_b1, temp_b2, temp_a1, temp_a2, epsl=0.0
   real :: hmin = 0.05, tmpvel
   logical :: exist
+  real :: ibuf
   
-  namelist/main_nml/ delt, delx, dely, ni, nj, ntstep, epsl
+  namelist/main_nml/ delt, ntstep, epsl
 
-  inquire(file='input.nml',exist=exist)
-  
-  if (exist) then
-     open(10, file='input.nml')
-     read(10, nml=main_nml)
-     close(10)
-  endif
-  
-  write(*, nml=main_nml)
-  
-  nip1 = ni + 1; njp1 = nj + 1
-  rdelx = 1./delx ; rdely = 1./dely
-  temp_a1 = delt * GRAV * rdelx
-  temp_a2 = delt * GRAV * rdely 
-  temp_b1 = delt * rdelx * 0.5
-  temp_b2 = delt * rdely * 0.5
-  
-  
-  allocate(uvel(0:1,1:nip1,1:njp1))
-  allocate(vvel(0:1,1:nip1,1:njp1))
-  allocate(eta(0:1,0:nip1,0:nip1))
-  allocate(h(0:nip1,0:njp1))
-  allocate(h0(1:ni,1:nj))
-  allocate(tmp(ni,nj))
-  allocate(topo(1:ni,1:nj))
-  allocate(wet(0:nip1,0:njp1))
-  allocate(xaxis(nip1))
-  allocate(yaxis(njp1))
+  call mpp_init()
+  call mpp_io_init()
+  call set_calendar_type(NO_CALENDAR)
+  call diag_manager_init()
 
-  forall(i=1:nip1) xaxis(i) = i
-  forall(i=1:njp1) yaxis(i) = i
-
-  topo(:,:) = 100.0
-!  topo(1,:) = -2.0
-  topo(ni,:) = -2.0
-  do i = 50, 250
-     topo(i,:) = 50.0 - ((real(i)-50.0)/200.0) * 50.3
-  enddo
+  call mpp_open(ibuf, 'input.nml', action=MPP_RDONLY,form=MPP_ASCII)
+  rewind(ibuf)
+  read(ibuf, nml=main_nml)
+  call mpp_close(ibuf)
   
-  topo(251:300,:) = -0.3
-  topo(:,1) = -2.0
-  topo(:,nj) = -2.0
-
-  uvel(:,:,:) = 0.0; vvel = 0.0
-
-  h0(:,:) = topo(:,:)
+  write(stdout(), nml=main_nml)
+  
+  Time = set_time(seconds=0)
+  
+  call init_model()
+  
+  call get_initial_conditions()
 
   eta(:,:,:) = 0.0
   
@@ -95,12 +77,18 @@ program main
   
   where(h(1:ni,1:nj) < hmin) wet(1:ni,1:nj)=.false.
   
+  temp_a1 = delt * GRAV * rdelx
+  temp_a2 = delt * GRAV * rdely
+  
+  temp_b1 = delt * rdelx * 0.5
+  temp_b2 = delt * rdely * 0.5
+  
   do t = 1, ntstep
      taup1 = mod(t,2)
      tau = mod(t+1,2)
 
-     do j = 1, njp1
-        do i = 1, nip1
+     do i = isc, iec
+        do j = jsc, jec
            tmpvel = uvel(tau,i,j) - temp_a1 * (eta(tau,i,j)-eta(tau,i-1,j))
            if (.not. wet(i-1,j) .and. tmpvel > 0.0) tmpvel = 0.0
            if (.not. wet(i,j) .and. tmpvel < 0.0) tmpvel = 0.0
@@ -113,8 +101,8 @@ program main
         enddo
      enddo
      
-     do j = 1, nj
-        do i = 1, ni
+     do i = isc, iec 
+        do j = jsc, jec
            eta(taup1,i,j) = eta(tau,i,j) - temp_b1 * ( (uvel(taup1,i+1,j) + abs(uvel(taup1,i+1,j))) * h(i,j) &
                                                      + (uvel(taup1,i+1,j) - abs(uvel(taup1,i+1,j))) * h(i+1,j) &
                                                      - (uvel(taup1,i,j) + abs(uvel(taup1,i,j))) * h(i-1,j) &
@@ -177,4 +165,56 @@ contains
     end do
   end subroutine shapiro_filter_2d
 
+  subroutine init_model()
+    integer :: siz(2)
+
+    if (.not.field_exist(grid_file, "topo")) call mpp_error(fatal, 'topo does not exist in '//trim(grid_file))
+    call field_size(grid_file, "topo", siz)
+    ni = siz(1)
+    nj = siz(2)
+    
+    ! Make some checks
+    if ( ni <= 0 .OR. nj <= 0) then
+       call mpp_error(FATAL,'=>Error ni or nj is <= 0')
+    endif
+
+    allocate(xaxis(ni), yaxis(nj))
+
+    delx = xaxis(2)-xaxis(1)
+    dely = yaxis(2)-yaxis(1)
+    rdelx = 1./delx ; rdely = 1./dely
+    
+    call read_data(grid_file, 'x', xaxis, no_domain=.true.)
+    call read_data(grid_file, 'y', yaxis, no_domain=.true.)
+    
+    ! Defining the domain decomposition layout. 
+    call mpp_define_layout ((/1,ni,1,nj/),mpp_npes(),domain_layout)
+     
+    write(msg,*) 'domain layout',domain_layout
+    call mpp_error(NOTE,trim(msg))
+     
+    ! Defining the local domain, with halo (for this example halo is set to 1).
+    call mpp_define_domains( (/1,ni,1,nj/), domain_layout, local_domain, &
+         xhalo=halo, yhalo=halo )
+
+    call mpp_get_compute_domain(local_domain, isc, iec, jsc, jec)
+    isd = isc - halo; ied = iec + halo
+    jsc = jsc - halo; jed = jec + halo
+
+    allocate(topo(isc:iec, jsc:jec))
+    
+    call read_data(grid_file, 'topo', topo, local_domain)
+
+    allocate( uvel(0:1,isd:ied,jsd:jed), vvel(0:1,isd:ied,jsd:jed) )
+    allocate( eta(0:1,isd:ied,jsd:jed),  h(isd:ied,isd:ied) )
+    allocate( h0(isc:iec,jsc:jec),       tmp(isc:iec,jsc:jec) )
+    allocate( wet(isc:iec,jsc:jec) )
+ 
+    uvel(:,:,:) = 0.0 ; vvel(:,:,:) = 0.0 ; eta(:,:,:) = 0.0
+    h(:,:) = 0.0 ; h0(:,:) = topo(:,:) ; tmp(:,:) = 0.0
+    wet(:,:) = .false.
+    where(h0>hmin) wet = .true. 
+    
+  end subroutine init_model
+    
 end program main

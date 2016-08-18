@@ -1,4 +1,4 @@
-program main
+program shallow_water
   
   use mpp_mod, only: mpp_npes, mpp_pe, mpp_error, stdout, FATAL, WARNING, NOTE, mpp_init, mpp_exit, mpp_max
   use mpp_io_init, only: mpp_io_init, mpp_open, mpp_close, MPP_RDONLY, MPP_ASCII, MPP_MULTI
@@ -8,8 +8,6 @@ program main
        diag_axis_init, send_data, diag_manager_end
   use time_manager_mod, only: set_calendar_type, NO_CALENDAR, time_type, set_time, operator(+), assignment(=), &
        print_time
-  
-  use netcdf_write, only : write_nc
   
   implicit none
   real, parameter :: GRAV = 9.8
@@ -25,33 +23,9 @@ program main
   logical :: exist
   real :: ibuf
   
-  namelist/main_nml/ delt, ntstep, epsl
+  namelist/shallow_water_nml/ delt, ntstep, epsl
 
-  call mpp_init()
-  call mpp_io_init()
-  call set_calendar_type(NO_CALENDAR)
-  call diag_manager_init()
-
-  call mpp_open(ibuf, 'input.nml', action=MPP_RDONLY,form=MPP_ASCII)
-  rewind(ibuf)
-  read(ibuf, nml=main_nml)
-  call mpp_close(ibuf)
-  
-  write(stdout(), nml=main_nml)
-  
-  Time = set_time(seconds=0)
-  
   call init_model()
-  
-  call get_initial_conditions()
-
-  eta(:,:,:) = 0.0
-  
-  where (h0<0.0) eta(0,1:ni,1:nj) = -1.0*h0(:,:)
-
-  do i = 1, ki
-     eta(:,i,:) = 2.0*sin(3.1414*(i-1)/ki)
-  enddo
   
   cfl = delt * sqrt(GRAV * maxval(h0)) / delx
 
@@ -61,21 +35,6 @@ program main
      stop 'ERROR'
   endif
   
-  h(0,:) = hmin
-  h(nip1,:) = hmin
-  h(:,0) = hmin
-  h(:,njp1) = hmin
-
-  eta(:,0,:) = 0.0
-  eta(:,nip1,:) = 0.0
-  eta(:,:,0) = 0.0
-  eta(:,:,njp1) = 0.0
-     
-  h(1:ni,1:nj) = h0(:,:) + eta(0,1:ni,1:nj)
-  
-  wet(:,:) = .true.
-  
-  where(h(1:ni,1:nj) < hmin) wet(1:ni,1:nj)=.false.
   
   temp_a1 = delt * GRAV * rdelx
   temp_a2 = delt * GRAV * rdely
@@ -168,6 +127,20 @@ contains
   subroutine init_model()
     integer :: siz(2)
 
+    call mpp_init()
+    call mpp_io_init()
+    call set_calendar_type(NO_CALENDAR)
+    call diag_manager_init()
+     
+    call mpp_open(ibuf, 'input.nml', action=MPP_RDONLY,form=MPP_ASCII)
+    rewind(ibuf)
+    read(ibuf, nml=shallow_water_nml)
+    call mpp_close(ibuf)
+     
+    write(stdout(), nml=shallow_water_nml)
+     
+    Time = set_time(seconds=0)
+  
     if (.not.field_exist(grid_file, "topo")) call mpp_error(fatal, 'topo does not exist in '//trim(grid_file))
     call field_size(grid_file, "topo", siz)
     ni = siz(1)
@@ -213,8 +186,19 @@ contains
     uvel(:,:,:) = 0.0 ; vvel(:,:,:) = 0.0 ; eta(:,:,:) = 0.0
     h(:,:) = 0.0 ; h0(:,:) = topo(:,:) ; tmp(:,:) = 0.0
     wet(:,:) = .false.
-    where(h0>hmin) wet = .true. 
+    
+    where(h0>hmin) wet = .true.
+
+    where (h0(:,:) < 0.0) eta(0,isc:iec,jsc:jec) = -1.0*h0(:,:)
+  
+    call get_initial_conditions()
+
+    h(1:ni,1:nj) = h0(:,:) + eta(0,1:ni,1:nj)
+  
+    wet(:,:) = .true.
+  
+    where(h(1:ni,1:nj) < hmin) wet(1:ni,1:nj)=.false.
     
   end subroutine init_model
     
-end program main
+end program shallow_water

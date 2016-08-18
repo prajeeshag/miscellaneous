@@ -1,0 +1,12 @@
+FC = gfortran
+CC = gcc
+NETCDF = /usr/local
+LD = gfortran
+
+#FFLAGS =  -I$(NETCDF)/include -Duse_libMPI -Duse_netCDF -fltconsistency -stack_temps -safe_cray_ptr -ftz -i_dynamic -assume byterecl -g -O3 -i4 -r8 -override_limits -traceback
+
+FFLAGS =  -I$(NETCDF)/include -Duse_netCDF -g -O3 -fdefault-real-8 -fcray-pointer -ffree-line-length-none -fno-range-check # -Waliasing -Wampersand -Warray-bounds -Wcharacter-truncation -Wconversion -Wline-truncation -Wintrinsics-std -Wsurprising -Wno-tabs -Wunderflow -Wunused-parameter -Wintrinsic-shadow -Wno-align-commons
+
+LDFLAGS  = -L$(NETCDF)/lib -lnetcdf -lnetcdff
+
+CFLAGS = -D__IFC

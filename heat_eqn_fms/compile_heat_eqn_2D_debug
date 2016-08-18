@@ -1,10 +1,16 @@
 #! /bin/bash
 set -x
 
+plat=gfortran.ubuntu
+
 thisdir=$(pwd)
+
+template=$thisdir/template.$plat
+
 srcdir=$(dirname $thisdir)
 
-FMS_UTILS=$srcdir/fms_shared
+FMS_UTILS=$srcdir/fms_shared_v5
+
 FMS_UTILITIES="$FMS_UTILS/include $FMS_UTILS/platform $FMS_UTILS/constants $FMS_UTILS/fms $FMS_UTILS/time_manager $FMS_UTILS/mpp $FMS_UTILS/diag_manager  $FMS_UTILS/memutils"
 
 MKMF=$thisdir/mkmf
@@ -13,17 +19,5 @@ mkdir -p $thisdir/exec
 
 cd $thisdir/exec
 
-# Change what follows to your system template.
-cat > template <<EOF
-	CC   = icc
-  FC       = mpiifort
-  LD       = mpiifort
-  FFLAGS =  -I/usr/local/include -I/gpfs1/home/Libs/INTEL/NETCDF4/netcdf-4.2.1/include -Duse_libMPI -Duse_netCDF -fltconsistency -stack_temps -safe_cray_ptr -ftz -i_dynamic -assume byterecl -g -O0 -i4 -r8 -override_limits -traceback
-  LDFLAGS  = -L/gpfs1/home/Libs/INTEL/NETCDF4/netcdf-4.2.1/lib -lnetcdf -lnetcdff
-  CFLAGS = -D__IFC
-EOF
-
-$MKMF -m Makefile -p a.out -t template -x $thisdir $FMS_UTILITIES  $FMS_UTILS/mpp/include
+$MKMF -m Makefile -p a.out -t $template -x $thisdir $FMS_UTILITIES  $FMS_UTILS/mpp/include
 exit
-
-

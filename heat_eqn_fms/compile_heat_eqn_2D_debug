@@ -1,19 +1,27 @@
 #! /bin/bash
-set -x
+#set -x
 
-plat=gfortran.ubuntu
+template=$1
+
+if [[ -z $template ]]; then
+    echo 'Error: No template file given.'
+    echo usage:
+    echo $0 template_file
+    exit 1
+fi
+
 
 thisdir=$(pwd)
 
-template=$thisdir/template.$plat
+template=$thisdir/$template
 
 srcdir=$(dirname $thisdir)
 
-FMS_UTILS=$srcdir/fms_shared_v5
+FMS_UTILS=$srcdir/fms_shared
 
 FMS_UTILITIES="$FMS_UTILS/include $FMS_UTILS/platform $FMS_UTILS/constants $FMS_UTILS/fms $FMS_UTILS/time_manager $FMS_UTILS/mpp $FMS_UTILS/diag_manager  $FMS_UTILS/memutils"
 
-MKMF=$thisdir/mkmf
+MKMF=$FMS_UTILS/mkmf
 
 mkdir -p $thisdir/exec
 

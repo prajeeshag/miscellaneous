@@ -1,0 +1,8 @@
+  CC   = icc
+  FC       = mpiifort
+  LD       = mpiifort
+  NETCDF = /gpfs1/home/Libs/INTEL/NETCDF4/netcdf-4.2.1
+  
+  FFLAGS = -I$(NETCDF)/include -Duse_libMPI -Duse_netCDF -fltconsistency -stack_temps -safe_cray_ptr -ftz -i_dynamic -assume byterecl -g -O3 -i4 -r8 -override_limits -traceback
+  LDFLAGS  = -L$(NETCDF)/lib -lnetcdf -lnetcdff
+  CFLAGS = -D__IFC

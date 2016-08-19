@@ -1,0 +1,15 @@
+FC = gfortran
+CC = gcc
+NETCDF = /usr/local
+LD = gfortran
+
+CPPFLAGS = -Duse_netCDF -Duse_libMPI -Dtest_shallow_water_mod
+
+FFLAGS =  -I$(NETCDF)/include $(CPPFLAGS) -g -O3 -fdefault-real-8 -fcray-pointer -ffree-line-length-none -fno-range-check -save-temps
+
+# -Waliasing -Wampersand -Warray-bounds -Wcharacter-truncation -Wconversion -Wline-truncation
+# -Wintrinsics-std -Wsurprising -Wno-tabs -Wunderflow -Wunused-parameter -Wintrinsic-shadow -Wno-align-commons
+
+LDFLAGS  = -L$(NETCDF)/lib -lnetcdf -lnetcdff
+
+CFLAGS = -D__IFC

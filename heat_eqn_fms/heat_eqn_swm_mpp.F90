@@ -151,13 +151,16 @@ PROGRAM  heat_eqn
     ! Time is incremented with the timestep
     Time = Time + timestep
 
-    do j = jsc,jec
-      do i = isc,iec
-        u(i,j,taup1) = u(i,j,tau)*(1-2*dtts*(delx**2 + dely**2)/(delx**2*dely**2)) + & 
+    do i = isc,iec
+       do j = jsc,jec
+          if (mask(i,j)) then
+             u(i,j,taup1) = u(i,j,tau)*(1-2*dtts*(delx**2 + dely**2)/(delx**2*dely**2)) + & 
              dtts*((u(i-1,j,tau) + u(i+1,j,tau))/delx**2 + (u(i,j-1,tau) + u(i,j+1,tau))/dely**2)
-        depsl = max(u(i,j,taup1)-u(i,j,tau),depsl)
-      enddo
-   enddo
+             depsl = max(u(i,j,taup1)-u(i,j,tau),depsl)
+          endif
+
+       enddo
+    enddo
    call mpp_max(depsl)
    
     ! Halo update after each time step computation.
@@ -179,10 +182,10 @@ PROGRAM  heat_eqn
     subroutine generate_boundary_conditions ()
       select case (bnd_option)
          case(1)
-            if (jsc == 1) u(:,jsc-1,:) = 0.0
-            if (jec == nj) u(:,jec+1,:) = 0.0
-            if (isc == 1) u(isc-1,:,:) = 0.0
-            if (iec == ni) u(iec+1,:,:) = 0.0
+            if (jsc == 1) u(:,jsc-1,:) = 1.0
+            if (jec == nj) u(:,jec+1,:) = 1.0
+            if (isc == 1) u(isc-1,:,:) = 1.0
+            if (iec == ni) u(iec+1,:,:) = 1.0
          case(2)
             if (jsc == 1) forall(i=isc:iec) u(i,jsc-1,:) = sin(3.1414*xt1(i))
             if (jec == nj) u(:,jec+1,:) = 0.0

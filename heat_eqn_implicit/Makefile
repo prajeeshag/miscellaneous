@@ -1,5 +1,4 @@
 
-
 FC = gfortran
 NETCDF = /usr/local
 OPTS = -O3 --default-real-8 -g

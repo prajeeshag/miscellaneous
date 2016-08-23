@@ -1,15 +1,19 @@
-"HEATEQN"
+"SHALLOW"
 0000 00 00 00 00 00
 #output files
-"heat_eqn", -1,  "seconds", 1, "seconds", "time"
-#
+"output", 0, "seconds", 1,"seconds", "time"
+
 #=======================================================================
 # Grid quantities:
-"heat_eqn","x","x","heat_eqn","all",.false.,"none",2 
-"heat_eqn","y","y","heat_eqn","all",.false.,"none",2 
+#"shallow_water_mod","X","X","output","all",.false.,"none",2
+#"shallow_water_mod","y","X","output","all",.false.,"none",2
 #==========================================================================
-# 2d ocean fields:
-"heat_eqn","temp","temp", "heat_eqn","all",.false.,"none",2
+# 2d ocean shallow_washallow_water_mod
+"shallow_water_mod","topo","topo", "output","all",.false.,"none",2
+"shallow_water_mod","uvel","uvel", "output","all",.false.,"none",2
+"shallow_water_mod","vvel","vvel", "output","all",.false.,"none",2
+"shallow_water_mod","eta","eta", "output","all",.false.,"none",2
+"shallow_water_mod","thick","thick", "output","all",.false.,"none",2
 
 #===============================================================================
 #

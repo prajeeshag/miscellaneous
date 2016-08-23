@@ -1,7 +1,7 @@
 "HEATEQN"
 0000 00 00 00 00 00
 #output files
-"heat_eqn", 1,  "seconds", 1, "seconds", "time"
+"heat_eqn", 10,  "seconds", 1, "seconds", "time"
 #
 #=======================================================================
 # Grid quantities:

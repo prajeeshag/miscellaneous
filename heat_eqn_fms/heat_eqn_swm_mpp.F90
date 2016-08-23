@@ -26,7 +26,7 @@ PROGRAM  heat_eqn
   real, dimension(:),allocatable :: xt1,yt1
   real, allocatable,dimension(:,:,:) :: u
   integer :: dtts = 1
-  real :: delx=2.0, dely=2.0, cfl
+  real :: delx=1.0, dely=1.0, cfl
   integer :: ioun,npes,pe, isc,iec,jsc,jec,isd,ied,jsd,jed
   integer, dimension(2) :: domain_layout=(/1,1/)
         integer :: tau=0,taup1=1
@@ -153,11 +153,11 @@ PROGRAM  heat_eqn
 
     do i = isc,iec
        do j = jsc,jec
-          if (mask(i,j)) then
+!          if (mask(i,j)) then
              u(i,j,taup1) = u(i,j,tau)*(1-2*dtts*(delx**2 + dely**2)/(delx**2*dely**2)) + & 
              dtts*((u(i-1,j,tau) + u(i+1,j,tau))/delx**2 + (u(i,j-1,tau) + u(i,j+1,tau))/dely**2)
              depsl = max(u(i,j,taup1)-u(i,j,tau),depsl)
-          endif
+!          endif
 
        enddo
     enddo
@@ -182,10 +182,10 @@ PROGRAM  heat_eqn
     subroutine generate_boundary_conditions ()
       select case (bnd_option)
          case(1)
-            if (jsc == 1) u(:,jsc-1,:) = 1.0
-            if (jec == nj) u(:,jec+1,:) = 1.0
-            if (isc == 1) u(isc-1,:,:) = 1.0
-            if (iec == ni) u(iec+1,:,:) = 1.0
+            if (jsc == 1) u(:,jsc-1,:) = 2.0
+            if (jec == nj) u(:,jec+1,:) = 2.0
+            if (isc == 1) u(isc-1,:,:) = 2.0
+            if (iec == ni) u(iec+1,:,:) = 2.0
          case(2)
             if (jsc == 1) forall(i=isc:iec) u(i,jsc-1,:) = sin(3.1414*xt1(i))
             if (jec == nj) u(:,jec+1,:) = 0.0
@@ -216,7 +216,7 @@ PROGRAM  heat_eqn
       select case (init_option) 
       case (1)
          call mpp_error(note, 'init option :1')
-         u(isc:iec,jsc:jec,0) = 0.0
+         u(60:70,40:50,0) = 2.0
       case default
          call mpp_error(note, 'init option :default')
          do j = jsc,jec

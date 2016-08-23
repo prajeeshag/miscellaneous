@@ -8,8 +8,8 @@ module shallow_water_mod
   use diag_manager_mod, only: diag_manager_init, register_diag_field, register_static_field, &
        diag_axis_init, send_data, diag_manager_end
   use time_manager_mod, only: set_calendar_type, NO_CALENDAR, time_type, set_time, operator(+), assignment(=), &
-       print_time
-  use constants_mod, only: GRAV 
+       print_time, set_ticks_per_second
+  use constants_mod, only: GRAV, PI
   
   implicit none
 
@@ -17,14 +17,16 @@ module shallow_water_mod
 
   real :: delt, delx = 0.0, dely = 0.0
   
-  integer :: ni = 0, nj = 0, halo = 1, dt_model
+  integer :: ni = 0, nj = 0, halo = 1
+  real :: dt_model=1.0 !seconds
   integer :: i, j, taup1, tau
   integer :: isc, iec, jsc, jec
   integer :: isd, ied, jsd, jed
   integer :: tstep = 0
+  integer :: id_x=0, id_y=0, id_uvel=0, id_vvel=0, id_eta=0, id_thick=0
   
-  real :: rdelx, rdely,  b1,  b2,  a1,  a2, epsl=0.0
-  real :: hmin = 0.05
+  real :: rdelx, rdely,  b1,  b2,  a1,  a2, epsl_shapiro =0.0
+  real :: hmin = 0.1
   type(time_type) :: dt_Time
 
   integer :: domain_layout(2)=(/1,1/)
@@ -35,19 +37,25 @@ module shallow_water_mod
                        h(:,:), h0(:,:), topo(:,:)
   real, allocatable :: xaxis(:), yaxis(:), tmp(:,:)
   logical, allocatable :: wet(:,:)
+  logical :: do_shapiro_filter = .false.
 
   character (len=1024) :: msg
+
+  character(len=256) , parameter :: module_name='shallow_water_mod'
   
-  namelist/shallow_water_nml/ dt_model, epsl
+  namelist/shallow_water_nml/ dt_model, epsl_shapiro, do_shapiro_filter
 
   public :: init_model, update_model, end_model
 
 contains
 
+  !shapiro_filter_2d
   subroutine shapiro_filter_2d (field, mask)
     real, intent(inout) :: field(:,:)
     logical, intent(in) :: mask(:,:)
     integer :: is, ie, js, je, i, j
+
+    if (.not.do_shapiro_filter) return
     
     is = 2; ie = size(field,1) - 1
     js = 2; je = size(field,2) - 1
@@ -58,16 +66,22 @@ contains
           if (.not.mask(i+1,j)) cycle
           if (.not.mask(i,j-1)) cycle
           if (.not.mask(i,j+1)) cycle
-          field(i,j) = (1-epsl)*field(i,j) + 0.25 * epsl * &
+          field(i,j) = (1-epsl_shapiro)*field(i,j) + 0.25 * epsl_shapiro * &
                (field(i-1,j)+field(i+1,j)+field(i,j-1)+field(i,j+1))
        end do
     end do
   end subroutine shapiro_filter_2d
+  !----------------------------------------------------------------------------
 
-  subroutine init_model()
-    integer :: siz(2), ibuf
+  !Init_model
+  subroutine init_model(Time)
+    type(time_type), intent(in) :: Time
+    integer :: siz(4), ibuf
     real :: cfl
     character (len=256) :: grid_file='INPUT/grid_spec.nc'
+    integer :: id_topo = 0
+    logical :: used
+    integer :: seconds, ticks
     
     call mpp_init()
     call mpp_io_init()
@@ -80,10 +94,24 @@ contains
      
     write(stdout(), nml=shallow_water_nml)
 
-    delt = real(dt_model)
+    seconds = 0; ticks = 1
     
-    dt_Time = set_time(seconds=dt_model)
-    
+    if(int(dt_model)>0) then
+       seconds = int(dt_model)
+       call set_ticks_per_second(ticks)
+       dt_Time = set_time(seconds=seconds)
+       delt = real(int(dt_model))
+    else
+       ticks = int(1.0/dt_model)
+       call set_ticks_per_second(ticks)
+       dt_Time = set_time(seconds=seconds, ticks=1)
+       delt = 1.0/ticks
+    endif
+
+    write(msg,*) delt 
+    call mpp_error(NOTE, '=> Time step = '//trim(msg)//' seconds')
+     
+        
     if (.not.field_exist(grid_file, "topo")) call mpp_error(fatal, 'topo does not exist in '//trim(grid_file))
     call field_size(grid_file, "topo", siz)
     ni = siz(1)
@@ -95,7 +123,11 @@ contains
     endif
 
     allocate(xaxis(ni), yaxis(nj))
-
+    
+    call read_data(grid_file, 'x', xaxis, no_domain=.true.)
+    call read_data(grid_file, 'y', yaxis, no_domain=.true.)
+    call mpp_error(NOTE, '=>Read axis from grid_spec.')
+    
     ! Inititializing some coeficients
     delx = xaxis(2)-xaxis(1)
     dely = yaxis(2)-yaxis(1)
@@ -106,8 +138,6 @@ contains
     b1 = delt * rdelx * 0.5
     b2 = delt * rdely * 0.5
 
-    call read_data(grid_file, 'x', xaxis, no_domain=.true.)
-    call read_data(grid_file, 'y', yaxis, no_domain=.true.)
     
     ! Defining the domain decomposition layout. 
     call mpp_define_layout ((/1,ni,1,nj/),mpp_npes(),domain_layout)
@@ -121,11 +151,12 @@ contains
 
     call mpp_get_compute_domain(domain2, isc, iec, jsc, jec)
     isd = isc - halo; ied = iec + halo
-    jsc = jsc - halo; jed = jec + halo
+    jsd = jsc - halo; jed = jec + halo
 
     allocate(topo(isc:iec, jsc:jec))
     
     call read_data(grid_file, 'topo', topo, domain2)
+    call mpp_error(NOTE, '=>Read topo from grid_spec')
 
     allocate( uvel(0:1,isd:ied,jsd:jed), vvel(0:1,isd:ied,jsd:jed) )
     allocate( eta(0:1,isd:ied,jsd:jed),  h(isd:ied,isd:ied) )
@@ -136,7 +167,7 @@ contains
     h(:,:) = 0.0 ; h0(:,:) = topo(:,:) ; tmp(:,:) = 0.0
     wet(:,:) = .false.
     
-    where(h0>hmin) wet = .true.
+    where (h0>hmin) wet = .true.
 
     where (h0(:,:) < 0.0) eta(0,isc:iec,jsc:jec) = -1.0*h0(:,:)
   
@@ -150,13 +181,47 @@ contains
 
     cfl = delt * sqrt(GRAV * maxval(h0)) / delx
 
-    if ( cfl >= 1.0 ) call mpp_error(fatal, '=> CFL Violation')
+    if ( cfl >= 1.0 ) then
+       write(msg, *)'delx = ', delx, 'dely = ',dely, 'h0_max=', maxval(h0), 'delt=',delt, 'cfl=', cfl
+       call mpp_error(WARNING, '=>'//trim(msg))
+       call mpp_error(fatal, '=> CFL Violation')
+    endif
+    
+
+    !diagnostics initializations
+    
+    id_x = diag_axis_init(name='X', data=xaxis, units='m' , cart_name='X', &
+         long_name='X-axis', domain2=domain2)
+    
+    id_y = diag_axis_init(name='Y', data=yaxis, units='m' , cart_name='Y', &
+         long_name='Y-axis', domain2=domain2)
+    
+    id_uvel = register_diag_field(module_name, 'uvel', (/id_x, id_y/), Time, &
+         'U-velocity', 'm/s', interp_method="conserve_order1")
+    
+    id_vvel = register_diag_field(module_name, 'vvel', (/id_x, id_y/), Time, &
+         'V-velocity', 'm/s', interp_method="conserve_order1")
+    
+    id_eta = register_diag_field(module_name, 'eta', (/id_x, id_y/), Time, &
+         'Sea surface elevation', 'm', interp_method="conserve_order1", &
+         mask_variant=.true., missing_value=1.e20)
+    
+    id_thick = register_diag_field(module_name, 'thick', (/id_x, id_y/), Time, &
+         'Column Thickness', 'm', interp_method="conserve_order1")
+    
+    id_topo = register_static_field(module_name, 'topo', (/id_x, id_y/), &
+         'Topography', 'm', interp_method="conserve_order1")
+
+    used = send_data(id_topo, topo(isc:iec,jsc:jec), Time)    
   
   end subroutine init_model
+  !----------------------------------------------------------------------------
 
+  ! update_model
   subroutine update_model(Time)
     type(time_type), intent(inout) :: Time
     real :: tmpvel
+    logical :: used
 
     tstep = tstep + 1
     Time = Time + dt_Time
@@ -201,20 +266,35 @@ contains
     call shapiro_filter_2d (eta(taup1,isc:iec,jsc:jec),wet(isc:iec,jsc:jec))
 
     h(isc:iec,jsc:jec) = h0(isc:iec,jsc:jec) + eta(taup1,isc:iec,jsc:jec)
+
+    !Diagnostics
         
-    tmp = -999.0
-    where(wet(isc:iec,jsc:jec)) tmp(isc:iec,jsc:jec) = eta(taup1, isc:iec,jsc:jec)
+    used = send_data(id_eta, eta(taup1,isc:iec, jsc:jec), Time, &
+         mask=wet(isc:iec,jsc:jec))
     
-    !call write_nc(xaxis(1:ni), yaxis(1:nj), tmp, 'eta', t, missing_value=-999.0)
-    !call write_nc(xaxis(1:ni), yaxis(1:nj), h0, 'h0', t)
-    !    call write_nc(xaxis(1:ni), yaxis(1:nj), uvel(taup1,1:ni,1:nj), 'uvel', t, missing_value=-999.0)
-    !     call write_nc(xaxis(1:ni), yaxis(1:nj), vvel(taup1,1:ni,1:nj), 'vvel', t, missing_value=-999.0)
+    used = send_data(id_uvel, uvel(taup1, isc:iec, jsc:iec), Time)
+    
+    used = send_data(id_vvel, vvel(taup1, isc:iec, jsc:iec), Time)
+
+    used = send_data(id_thick, h(isc:iec,jsc:jec), Time) 
+  
   end subroutine update_model
-   
+  !----------------------------------------------------------------------------------------------------------
+
+  
+  ! get_initial_conditions 
   subroutine get_initial_conditions()
+    integer :: i, j
+    do i = 1, 21
+       do j = 1, 21
+          eta(:,i+20,j+20) = sin(PI*(i-1)/21)*sin(PI*(j-1)/21)
+       enddo   
+    enddo
     
   end subroutine get_initial_conditions
+  !---------------------------------------------------------------------------------------------------------
 
+  !end_model
   subroutine end_model()
     
     deallocate(uvel)
@@ -226,6 +306,7 @@ contains
     deallocate(wet)
 
   end subroutine end_model
+  !---------------------------------------------------------------------------------------------------------
     
 end module shallow_water_mod
 
@@ -240,7 +321,7 @@ program main
 
   implicit none
 
-  integer :: ntstep = 2000, t
+  integer :: ntstep = 1000, t
   type(time_type) :: Time
 
   call mpp_init()
@@ -251,7 +332,7 @@ program main
   
   Time = set_time(seconds=0)
   
-  call init_model()
+  call init_model(Time)
 
   do t = 1, ntstep
      call update_model(Time)

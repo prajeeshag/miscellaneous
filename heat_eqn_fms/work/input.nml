@@ -1,10 +1,12 @@
 	&heat_eqn_nml 
 	    ni = 100, 
-	    nj = 100, 
+	    nj = 100,
+	    delx = 10,
+	    dely = 10,
 	    ntsteps =50, 	
-	    dtts = 1,
+	    dtts = 5,
 	    epsl = 1e-5,
-	    init_option = 2,
+	    init_option = 1,
 	    bnd_option = 1
 	/
 	 &diag_manager_nml
